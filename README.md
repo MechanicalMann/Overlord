@@ -1,3 +1,3 @@
 Overlord
 ========
-An automation application.
+A music automation application.
