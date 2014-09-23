@@ -14,7 +14,7 @@ watchers = []
 
 def watch_paths(paths):
     q = Queue()
-    updater = Updater(q)
+    updater = update.Updater(q)
     updater.start()
     for p in paths:
         watcher = get_watcher(p, q)
@@ -31,24 +31,6 @@ def get_watcher(path, queue):
     # TODO support for OSX?
     else:
         return EmptyWatcher(path, queue)
-
-class UpdateAction:
-    """
-    Defines an action that was performed on a file.
-    """
-    ADDED   = 0
-    UPDATED = 1
-    MOVED   = 2
-    DELETED = 4
-
-    action = ADDED
-    filename = ""
-    newfile = ""
-
-    def __init__(self, action, filename, newfile = ""):
-        self.action = action
-        self.filename = filename
-        self.newfile = newfile
 
 class DirectoryWatcher(Process):
     """

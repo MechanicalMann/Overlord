@@ -7,7 +7,7 @@ import os
 import random
 import mutagen #audio metadata module
 import mimetypes
-
+import collections
 
 # Add .m4a as a valid MIME type.
 mimetypes.add_type('audio/mp4', '.m4a')
@@ -21,15 +21,28 @@ def main():
     # This next logic is temporary
     args = parser.parse_args()
 
-    try:
-        library.watch_paths(args.directories)
-    except:
-        print "Unable to start controlling the airwaves."
-        raise
+    #try:
+    #    library.watch_paths(args.directories)
+    #except:
+    #    print "Unable to start controlling the airwaves."
+    #    raise
+
+    # quick n' dirty proof of concept, operates only on first directory passed in
+    music = getFiles(args.directories[0])
+    recently_played = collections.deque(music, len(music)/2)
 
     try:
         while 1:
-            time.sleep(1)
+            # pick a random tune, display it.
+            t = random.choice(music)
+            while t in recently_played:
+                t = random.choice(music)
+                # ok got a track not in the queue
+            print t
+            recently_played.append(t)
+
+            time.sleep(0.5)
+
     except KeyboardInterrupt:
         print "Goodbye."
     finally:
@@ -41,7 +54,10 @@ def isAudio(f):
 
 # prints full pathnames to all valid audio files in 'path'
 def getFiles(path):
+    list_of_files = []
     for root, dirs, files in os.walk(path, followlinks=True):
         for filename in files:
             if (isAudio(filename)):
-                print os.path.join(root, filename)
+                #print os.path.join(root, filename)
+                list_of_files.append(os.path.join(root, filename))
+    return list_of_files

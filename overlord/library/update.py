@@ -1,7 +1,6 @@
 from multiprocessing import process
-from overlord.library import UpdateAction
 
-class Updater(Process):
+class Updater(process.Process):
     def __init__(self, queue):
         super(Updater, self).__init__()
         self.queue = queue
@@ -23,3 +22,23 @@ class Updater(Process):
                 text += " had something happen to it."
 
             print text
+
+            
+class UpdateAction:
+    """
+    Defines an action that was performed on a file.
+    """
+    ADDED   = 0
+    UPDATED = 1
+    MOVED   = 2
+    DELETED = 4
+
+    action = ADDED
+    filename = ""
+    newfile = ""
+
+    def __init__(self, action, filename, newfile = ""):
+        self.action = action
+        self.filename = filename
+        self.newfile = newfile
+
