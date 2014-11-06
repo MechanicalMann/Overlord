@@ -7,11 +7,9 @@ import os
 import random
 import mutagen #audio metadata module
 import wave    #because mutagen doesn't do PCM wave files
-import mimetypes
+import re
 import collections
 
-# Add .m4a as a valid MIME type.
-mimetypes.add_type('audio/mp4', '.m4a')
 
 parser = argparse.ArgumentParser(description="The Radio Robot Overlord")
 parser.add_argument('directories', metavar="DIR", nargs="*", help="One or more directories to watch for changes.")
@@ -32,6 +30,9 @@ def main():
     music = getFiles(args.directories[0])
     recently_played = collections.deque(music, len(music)/2)
 
+    for f in music:
+        print f
+    exit()
     try:
         while 1:
             # pick a random tune, display it.
@@ -56,11 +57,10 @@ def main():
 
 
 def isAudio(f):
-    '''Use mimetype to determine if a file is an audio file.
-    Annoyingly, playlists count as 'audio', so strip those.
+    '''Use regular expressions to determine if a file is an audio file.
+    Returns a bool.
     '''
-    mime = mimetypes.guess_type(f)[0]
-    return (mime and mime.startswith('audio') and not mime.endswith(('x-mpegurl','x-scpls')))
+    return (re.match(".*\.(mp[34]|m4a|ogg|wave?|flac?|aiff?)$", f, re.I) != None)
 
 # prints full pathnames to all valid audio files in 'path'
 def getFiles(path):
