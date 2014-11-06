@@ -29,10 +29,7 @@ def main():
     # quick n' dirty proof of concept, operates only on first directory passed in
     music = getFiles(args.directories[0])
     recently_played = collections.deque(music, len(music)/2)
-
-    for f in music:
-        print f
-    exit()
+    
     try:
         while 1:
             # pick a random tune, display it.
