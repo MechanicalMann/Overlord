@@ -57,7 +57,7 @@ def isAudio(f):
     '''Use regular expressions to determine if a file is an audio file.
     Returns a bool.
     '''
-    return (re.match(".*\.(mp[34]|m4a|ogg|wave?|flac?|aiff?)$", f, re.I) != None)
+    return (re.match(".*\.(mp[34]|m4a|ogg|wav|flac?|aiff?)$", f, re.I) != None)
 
 # prints full pathnames to all valid audio files in 'path'
 def getFiles(path):
