@@ -60,7 +60,7 @@ def isAudio(f):
     Annoyingly, playlists count as 'audio', so strip those.
     '''
     mime = mimetypes.guess_type(f)[0]
-    return (mime and mime.startswith('audio') and not mime.endswith('x-mpegurl') and not mime.endswith('x-scpls'))
+    return (mime and mime.startswith('audio') and not mime.endswith(('x-mpegurl','x-scpls')))
 
 # prints full pathnames to all valid audio files in 'path'
 def getFiles(path):
