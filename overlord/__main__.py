@@ -55,10 +55,12 @@ def main():
 ####
 
 
-
-# uses MIME to determine if a file is audio; based on extension.
 def isAudio(f):
-    return (mimetypes.guess_type(f)[0] and mimetypes.guess_type(f)[0].startswith('audio'))
+    '''Use mimetype to determine if a file is an audio file.
+    Annoyingly, playlists count as 'audio', so strip those.
+    '''
+    mime = mimetypes.guess_type(f)[0]
+    return (mime and mime.startswith('audio') and not mime.endswith('x-mpegurl') and not mime.endswith('x-scpls'))
 
 # prints full pathnames to all valid audio files in 'path'
 def getFiles(path):
