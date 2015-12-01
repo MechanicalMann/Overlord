@@ -134,11 +134,3 @@ def getDuration(audio_file):
 
     return time_sec
 
-def createTables(db_full_path):
-    try:
-        database.init(db_full_path)
-        database.create_tables([AudioFile])
-        database.close()
-    except Exception as ex:
-        print("Unable to initialize database at {}: {}.  Aborting.".format(dbpath, str(ex)))
-        exit()
