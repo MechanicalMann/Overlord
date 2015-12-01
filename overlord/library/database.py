@@ -46,6 +46,8 @@ class OverlordDB(object):
         self.connect_args = connect_args
     def __enter__(self):
         database.init(self.dbname, **self.connect_args)
+    # setup tables if they don't exist
+        database.create_tables([AudioFile], safe=True)
         database.connect()
         return database
     def __exit__(self, t, v, tb):

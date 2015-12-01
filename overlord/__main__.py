@@ -9,7 +9,10 @@ import mutagen #audio metadata module
 import wave    #because mutagen doesn't do PCM wave files
 import re
 import collections
-
+import datetime
+from peewee import * 
+import overlord
+from overlord.library.database import *
 
 parser = argparse.ArgumentParser(description="The Radio Robot Overlord")
 parser.add_argument('directories', metavar="DIR", nargs="*", help="One or more directories to watch for changes.")
@@ -17,6 +20,8 @@ parser.add_argument('directories', metavar="DIR", nargs="*", help="One or more d
 def main():
     multiprocessing.freeze_support()
     
+
+
     # This next logic is temporary
     args = parser.parse_args()
 
@@ -25,6 +30,22 @@ def main():
     #except:
     #    print "Unable to start controlling the airwaves."
     #    raise
+
+    db_path=os.path.dirname(__file__)
+        
+    # half-assedly parse the first directory into the DB, as music
+    # TODO: parse all directories, into their proper categories
+    # TODO: don't make a DB handle in the createTables file, then another one up here
+    with OverlordDB(db_path) as db:
+        with db.transaction():
+            for i in getFiles(args.directories[0]):
+                a = AudioFile()
+                a.filename = i
+                (a.artist, a.title) = getMetadata(i)
+                a.duration = getDuration(i)
+                a.last_played = datetime.date.min 
+                a.category = "music"
+                a.save()
 
     # quick n' dirty proof of concept, operates only on first directory passed in
     music = getFiles(args.directories[0])
@@ -112,3 +133,12 @@ def getDuration(audio_file):
         time_sec = audio.info.length
 
     return time_sec
+
+def createTables(db_full_path):
+    try:
+        database.init(db_full_path)
+        database.create_tables([AudioFile])
+        database.close()
+    except Exception as ex:
+        print("Unable to initialize database at {}: {}.  Aborting.".format(dbpath, str(ex)))
+        exit()
