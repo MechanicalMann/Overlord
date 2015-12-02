@@ -31,11 +31,12 @@ def main():
     #    print "Unable to start controlling the airwaves."
     #    raise
 
+    # quick n' dirty proof of concept, operates only on first directory passed in
+    
     db_path=os.path.dirname(__file__)
         
     # half-assedly parse the first directory into the DB, as music
     # TODO: parse all directories, into their proper categories
-    # TODO: don't make a DB handle in the createTables file, then another one up here
     with OverlordDB(db_path) as db:
         with db.transaction():
             for i in getFiles(args.directories[0]):
@@ -43,25 +44,43 @@ def main():
                 a.filename = i
                 (a.artist, a.title) = getMetadata(i)
                 a.duration = getDuration(i)
-                a.last_played = datetime.date.min 
+                a.last_played = datetime.datetime.min 
                 a.category = "music"
                 a.save()
 
-    # quick n' dirty proof of concept, operates only on first directory passed in
-    music = getFiles(args.directories[0])
-    recently_played = collections.deque(music, len(music)/2)
-    
+        
+    # initialize the time a file must not have been played before to now
+    # this will be useful once we also determine a "freshness" time period. for now it's just redundant
+    last_played_before = datetime.datetime.now()
+
     try:
         while 1:
-            # pick a random tune, display it.
-            t = random.choice(music)
-            while t in recently_played:
-                t = random.choice(music)
-                # ok got a track not in the queue
-            print t, "\n\t", getMetadata(t), getDuration(t)
-            recently_played.append(t)
 
-            time.sleep(0.5)
+            # update time limit
+            last_played_before = datetime.datetime.now()
+            print last_played_before
+            
+            # this is probably an expensive query once the dataset gets large. profile and optimize later.
+            #music = AudioFile.select().where((AudioFile.category == "music") & (AudioFile.last_played < last_played_before))
+            #
+            #for t in music:
+            #    print t.filename, "\n\t", t.artist, t.title, t.duration 
+
+            
+            # pick a random tune, display it.
+            t = AudioFile.select().where((AudioFile.category == "music") and (AudioFile.last_played < last_played_before)).order_by(fn.Random()).limit(1).get()
+            print t.filename, "\n\t", t.artist, t.title, t.duration, t.last_played
+            
+            # update the last played time
+            t.last_played = datetime.datetime.now()
+            t.save()
+            
+            # chill for a sec
+            time.sleep(1)
+            
+            # spacing pretty print line
+            print "\n"
+
     except KeyboardInterrupt:
         print "Goodbye."
     finally:
