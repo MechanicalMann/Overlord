@@ -27,7 +27,7 @@ class BaseModel(Model):
         database = database
 
 class AudioFile(BaseModel):
-    #file_hash = CharField() # probably don't need this; would change on metadata update
+    file_hash = CharField() # used to detect metadata updates
     filename = CharField()
     artist = CharField()
     title = CharField()

@@ -5,12 +5,12 @@ import library
 
 import os
 import random
-import mutagen #audio metadata module
-import wave    #because mutagen doesn't do PCM wave files
+import mutagen # audio metadata module
+import wave    # because mutagen doesn't do PCM wave files
 import re
-import collections
 import datetime
-from peewee import * 
+import hashlib
+
 import overlord
 from overlord.library.database import *
 
@@ -35,8 +35,9 @@ def main():
     
     db_path=os.path.dirname(__file__)
         
-    # half-assedly parse the first directory into the DB, as music
+    # half-assedly parse the first directory from the commandline into the DB, as music
     # TODO: parse all directories, into their proper categories
+    # TODO: thread this initial parse
     with OverlordDB(db_path) as db:
         with db.transaction():
             for i in getFiles(args.directories[0]):
@@ -44,6 +45,7 @@ def main():
                 a.filename = i
                 (a.artist, a.title) = getMetadata(i)
                 a.duration = getDuration(i)
+                a.file_hash = getChecksum(i)
                 a.last_played = datetime.datetime.min 
                 a.category = "music"
                 a.save()
@@ -153,3 +155,12 @@ def getDuration(audio_file):
 
     return time_sec
 
+def getChecksum(audio_file):
+    ''' Returns a hash of a file's contents, as a hexadecimal string
+        Currently uses md5
+    '''
+    cksum = hashlib.md5()
+    with open(audio_file, "rb") as f:
+        for chunk in iter(lambda: f.read(128 * cksum.block_size), b""):
+            cksum.update(chunk)
+    return cksum.hexdigest()
