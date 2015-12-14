@@ -35,21 +35,40 @@ def main():
     
     db_path=os.path.dirname(__file__)
         
+
+
+
+
+
     # half-assedly parse the first directory from the commandline into the DB, as music
     # TODO: parse all directories, into their proper categories
     # TODO: thread this initial parse
     with OverlordDB(db_path) as db:
-        with db.transaction():
-            for i in getFiles(args.directories[0]):
-                a = AudioFile()
-                a.filename = i
-                (a.artist, a.title) = getMetadata(i)
-                a.duration = getDuration(i)
-                a.file_hash = getChecksum(i)
-                a.last_played = datetime.datetime.min 
-                a.category = "music"
-                a.save()
+        
+        current = [a.filename for a in AudioFile.select()]
+        ondisk = getFiles(args.directories[0])
+        new_files = set(ondisk) - set(current)
+        deleted_files = set(current) - set(ondisk)
+        
+        if len(new_files) > 0:
+            print("Adding new files~!")
+            with db.transaction():
+                for i in new_files:
+                    a = AudioFile()
+                    a.filename = i
+                    (a.artist, a.title) = getMetadata(i)
+                    a.duration = getDuration(i)
+                    a.file_hash = getChecksum(i)
+                    a.last_played = datetime.datetime.min 
+                    a.category = "music"
+                    a.save()
 
+        if len(deleted_files) > 0:
+            print("Removing deleted files.")
+            with db.transaction():
+                for i in deleted_files:
+                    a = AudioFile.get(AudioFile.filename == i)
+                    a.delete_instance()
         
     # initialize the time a file must not have been played before to now
     # this will be useful once we also determine a "freshness" time period. for now it's just redundant
