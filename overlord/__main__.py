@@ -45,10 +45,29 @@ def main():
     # TODO: thread this initial parse
     with OverlordDB(db_path) as db:
         
-        current = [a.filename for a in AudioFile.select()]
-        ondisk = getFiles(args.directories[0])
-        new_files = set(ondisk) - set(current)
-        deleted_files = set(current) - set(ondisk)
+        # os.walk uses os.listdir, which will return unicode strings if it is
+        #   passed a unicode string argument, and byte strings otherwise
+        #
+        # the sqlite3 backend stores ALL strings as unicode
+        #
+        # if you make a set of unicode strings and a set of byte strings and
+        #   try to do set operations on them, you're gonna have a bad time.
+        #
+        # the system that this is being developed on has a utf-8 locale
+        # I _assume_ there's some way to get the system locale, 
+        #   but until I have time to research it, I'm just making the argument to
+        #   os.walk unicode by blindly decoding the string with a utf-8 locale
+        # I expect this to break horribly on any system with a different locale
+        #
+        # tl;dr: UNICODE IS HARD, but we're using unicode strings for file paths
+
+        current = set([a.filename for a in AudioFile.select()])
+        ondisk = set(getFiles(args.directories[0].decode('utf-8')))
+
+        # let's do some set differences.
+        new_files = ondisk - current
+        deleted_files = current - ondisk
+        rescan_files = current - deleted_files
         
         if len(new_files) > 0:
             print("Adding new files~!")
@@ -62,6 +81,22 @@ def main():
                     a.last_played = datetime.datetime.min 
                     a.category = "music"
                     a.save()
+        
+        if len(rescan_files) > 0:
+            print("Rescanning existing files!")
+            with db.transaction():
+                for i in rescan_files:
+                    a = AudioFile.get(AudioFile.filename == i)
+                    checksum = getChecksum(i)
+                    if a.file_hash != checksum:
+                        # update the metadata
+                        (a.artist, a.title) = getMetadata(i)
+                        # it's unlikely but possible the duration has changed
+                        # so update that too
+                        a.duration = getDuration(i)
+                        # setting this to the pre-computed checksum
+                        a.file_hash = checksum
+                        a.save()
 
         if len(deleted_files) > 0:
             print("Removing deleted files.")
