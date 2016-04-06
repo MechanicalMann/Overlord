@@ -75,6 +75,7 @@ def main():
                 for i in new_files:
                     a = AudioFile()
                     a.filename = i
+                    a.file_mtime = os.path.getmtime(i)
                     (a.artist, a.title) = getMetadata(i)
                     a.duration = getDuration(i)
                     a.file_hash = getChecksum(i)
@@ -87,16 +88,19 @@ def main():
             with db.transaction():
                 for i in rescan_files:
                     a = AudioFile.get(AudioFile.filename == i)
-                    checksum = getChecksum(i)
-                    if a.file_hash != checksum:
-                        # update the metadata
-                        (a.artist, a.title) = getMetadata(i)
-                        # it's unlikely but possible the duration has changed
-                        # so update that too
-                        a.duration = getDuration(i)
-                        # setting this to the pre-computed checksum
-                        a.file_hash = checksum
-                        a.save()
+                    # check modification time
+                    if a.file_mtime != os.path.getmtime(i):
+                        checksum = getChecksum(i)
+                        # check file hash
+                        if a.file_hash != checksum:
+                            # update the metadata
+                            (a.artist, a.title) = getMetadata(i)
+                            # it's unlikely but possible the duration has changed
+                            # so update that too
+                            a.duration = getDuration(i)
+                            # setting this to the pre-computed checksum
+                            a.file_hash = checksum
+                            a.save()
 
         if len(deleted_files) > 0:
             print("Removing deleted files.")
@@ -104,7 +108,7 @@ def main():
                 for i in deleted_files:
                     a = AudioFile.get(AudioFile.filename == i)
                     a.delete_instance()
-        
+    
     # initialize the time a file must not have been played before to now
     # this will be useful once we also determine a "freshness" time period. for now it's just redundant
     last_played_before = datetime.datetime.now()
@@ -155,17 +159,22 @@ def isAudio(f):
     '''
     return (re.match(".*\.(mp[34]|m4a|ogg|wav|flac?|aiff?)$", f, re.I) != None)
 
-# prints full pathnames to all valid audio files in 'path'
 def getFiles(path):
+    '''Walk input path, finding all audio files contained within the path.
+    Returns a list of valid files.
+    '''
     list_of_files = []
     for root, dirs, files in os.walk(path, followlinks=True):
         for filename in files:
             if (isAudio(filename)):
-                #print os.path.join(root, filename)
                 list_of_files.append(os.path.join(root, filename))
     return list_of_files
 
+
 def getMetadata(audio_file):
+    '''Scan audio_file for metadata.
+    Returns a tuple of strings: artist, title
+    '''
     
     artist = "Unknown Artist"
     title = "Unknown Title"

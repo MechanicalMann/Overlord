@@ -28,6 +28,7 @@ class BaseModel(Model):
 
 class AudioFile(BaseModel):
     file_hash = CharField() # used to detect metadata updates
+    file_mtime = DateTimeField() # also used in update detection
     filename = CharField()
     artist = CharField()
     title = CharField()
