@@ -29,7 +29,10 @@ class BaseModel(Model):
 class AudioFile(BaseModel):
     file_hash = CharField() # used to detect metadata updates
     file_mtime = DateTimeField() # also used in update detection
-    filename = CharField()
+    filename = CharField(primary_key = True) 
+    # let's make this the primary key, until we decide we need an autoincrementing index column of ints
+    # Note: we will need to make the first .save() call with parameters .save(force_insert=True)
+        # see http://docs.peewee-orm.com/en/latest/peewee/models.html#id3 for more info
     artist = CharField()
     title = CharField()
     duration = FloatField()

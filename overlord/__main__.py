@@ -81,7 +81,7 @@ def main():
                     a.file_hash = getChecksum(i)
                     a.last_played = datetime.datetime.min 
                     a.category = "music"
-                    a.save()
+                    a.save(force_insert=True) # due to non-integer primary key
         
         if len(rescan_files) > 0:
             print("Rescanning existing files!")
@@ -108,7 +108,9 @@ def main():
                 for i in deleted_files:
                     a = AudioFile.get(AudioFile.filename == i)
                     a.delete_instance()
-    
+    #debug###########
+    exit()
+
     # initialize the time a file must not have been played before to now
     # this will be useful once we also determine a "freshness" time period. for now it's just redundant
     last_played_before = datetime.datetime.now()
